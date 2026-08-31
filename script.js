@@ -15,74 +15,81 @@ function togglePlay() {
   }
 }
 
-// Update play button
+// Update play/pause button
 function updateButton() {
-  if (video.paused) {
-    toggle.textContent = "►";
-  } else {
-    toggle.textContent = "❚ ❚";
-  }
+  toggle.textContent = video.paused ? "►" : "❚ ❚";
 }
 
 // Update progress bar
 function handleProgress() {
+  if (!video.duration || isNaN(video.duration)) {
+    return;
+  }
+
   const percent = (video.currentTime / video.duration) * 100;
 
+  // Update both width and flex-basis
+  progressBar.style.width = `${percent}%`;
   progressBar.style.flexBasis = `${percent}%`;
 }
 
-// Change volume and playback speed
+// Update volume and playback speed
 function handleRangeUpdate() {
   if (this.name === "volume") {
-    video.volume = this.value;
+    video.volume = parseFloat(this.value);
   }
 
   if (this.name === "playbackRate") {
-    video.playbackRate = this.value;
+    video.playbackRate = parseFloat(this.value);
   }
 }
 
-// Skip forward/backward
+// Skip video
 function skip() {
   video.currentTime += parseFloat(this.dataset.skip);
 }
 
-// Click on progress bar to seek
+// Seek using progress bar
 function scrub(event) {
-  const scrubTime =
-    (event.offsetX / progress.offsetWidth) * video.duration;
+  if (!video.duration || isNaN(video.duration)) {
+    return;
+  }
 
-  video.currentTime = scrubTime;
+  const position = event.offsetX / progress.offsetWidth;
+  video.currentTime = position * video.duration;
 }
 
-// Event listeners
-video.addEventListener("click", togglePlay);
-
-toggle.addEventListener("click", togglePlay);
-
+// Play / pause events
 video.addEventListener("play", updateButton);
-
 video.addEventListener("pause", updateButton);
 
+// Clicking video
+video.addEventListener("click", togglePlay);
+
+// Clicking play button
+toggle.addEventListener("click", togglePlay);
+
+// Update progress while video plays
 video.addEventListener("timeupdate", handleProgress);
 
+// Skip buttons
 skipButtons.forEach((button) => {
   button.addEventListener("click", skip);
 });
 
+// Volume and playback speed
 ranges.forEach((range) => {
   range.addEventListener("change", handleRangeUpdate);
-  range.addEventListener("mousemove", handleRangeUpdate);
+  range.addEventListener("input", handleRangeUpdate);
 });
 
+// Progress bar seeking
 progress.addEventListener("click", scrub);
 
-// Handle video loading error
+// Video error handling
 video.addEventListener("error", () => {
   progressBar.style.width = "0%";
   progressBar.style.flexBasis = "0%";
-
   toggle.textContent = "⚠";
-
   toggle.title = "Video failed to load";
 });
